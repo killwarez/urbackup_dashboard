@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# My
+csv1/
+db1/
+flask-tables-main/
+export_clients_my.sh

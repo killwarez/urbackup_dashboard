@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block content %}
+<table id = "data" class = "table table-hover table-striped">
+    <thead>
+    <tr>
+        {% for header in headers %}
+        <th> {{ header }} </th>
+        {% endfor %}
+    </tr>
+    </thead>
+
+    <tbody>
+    {% for client in clients %}
+    <tr>
+        <td> {{client[1]}} </td>
+        <td> {{client[2]}} </td>
+        <td> {{client[3]}} </td>
+        <td> {{client[4]}} </td>
+        <td> {{client[5]}} </td>
+        <td> {{client[6]}} </td>
+        <td> {{client[7]}} </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+
+    <tfoot>
+      <tr>
+          {% for header in headers %}
+          <th></th>
+          {% endfor %}
+      </tr>
+    </tfoot>
+
+</table>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    $(document).ready(function () {
+      $('#data').DataTable({
+        initComplete: function () {
+          this.api().columns([0, 1, 5, 6]).every( function () {
+              var column = this;
+              var select = $('<select><option value="">Show all</option></select>')
+                  .appendTo( $(column.footer()).empty() )
+                  .on( 'change', function () {
+                      var val = $.fn.dataTable.util.escapeRegex(
+                          $(this).val()
+                      );
+                      column
+                          .search( val ? '^'+val+'$' : '', true, false )
+                          .draw();
+                  } );
+              column.data().unique().sort().each( function ( d, j ) {
+                  select.append( '<option value="'+d+'">'+d+'</option>' )
+              } );
+          } );
+        },
+        "pageLength": 15,
+        "lengthMenu": [ [15, 25, 50, -1], [15, 25, 50, "All"] ],
+        columns: [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null],
+          "createdRow": function ( row, data, index ) {
+            if ( data[5] === "Ok" ) {
+              $('td', row).eq(5).addClass('table-success');}
+            if ( data[5] === "No recent backup" ) {
+              $('td', row).eq(5).addClass('table-danger');}
+            if ( data[5] === "Disabled" ) {
+              $('td', row).eq(5).addClass('table-success');}
+            if ( data[6] === "Ok" ) {
+              $('td', row).eq(6).addClass('table-success');}
+            if ( data[6] === "No recent backup" ) {
+              $('td', row).eq(6).addClass('table-danger');}
+            if ( data[6] === "Disabled" ) {
+              $('td', row).eq(6).addClass('table-success');}
+      }
+      });
+    });
+  </script>
+{% endblock %}
