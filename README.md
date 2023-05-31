@@ -1,12 +1,13 @@
 # UrBackup Dashboard - Web server and client
-Set of python scripts to collect UrBackup clients status from [UrBackup Servers](https://www.urbackup.org/download.html) to display on common dashboard.
+Set of Python scripts to collect UrBackup clients' status from multiple [UrBackup Servers](https://www.urbackup.org/download.html) to display on the single dashboard. Email notifications of backup issues.
 ### Features:
 - Dashboard: Receive backup status information via REST API as CSV payload
 - Dashboard: Client update API with token authorization
-- Dashboard: UrBackup clients status and errors display
+- Dashboard: UrBackup clients' status and errors display
 - Client: UrBackup status collection using UrBackup API
 - Client: UrBackup clients detailed errors collection
-- Client: Auto-update via API 
+- Client: Auto-update via API
+- Email notification of backup issues
 ### Requirements (Windows)
 1. Python
 2. Python virtual environment
@@ -29,11 +30,11 @@ Configure email delivery in the *urbackup_dashboard_email_params.py* file
 Schedule script running with Cron or Task Manager
 ### Add new client:
 1. Add new token to *DB\urbackup_dashboard.db* -> *api_tokens* table
-2. Add same token to *urbackup_export_clients_params.py* configuration
+2. Add the same token to the *urbackup_export_clients_params.py* configuration
 ### Files and folders
 #### Dashboard:
 - *urbackup_dashboard_server.py* - Flask-based web server
-- *urbackup_dashboard_send_email.py* - Email notification script on backup errors and warnings, should run with external scheduler
+- *urbackup_dashboard_send_email.py* - Email notification script on backup errors and warnings, should run with an external scheduler
 - *urbackup_dashboard_email_params.py* - Jinja-based email template and sending settings; input credentials here before scheduling notifications
 - *urbackup_export_clients_status_update.py* - Client updated script redistribution
 - *urbackup_export_clients_params.py* - Client update requirement dummy file
