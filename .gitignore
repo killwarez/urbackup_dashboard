@@ -129,7 +129,11 @@ dmypy.json
 .pyre/
 
 # My
+csv/
 csv1/
 db1/
 flask-tables-main/
 export_clients_my.sh
+urbackup_dashboard_before_migration.db
+urbackup_dashboard.db
+urbackup_dashboard_empty.db

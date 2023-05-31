@@ -20,6 +20,9 @@
         <td> {{client[5]}} </td>
         <td> {{client[6]}} </td>
         <td> {{client[7]}} </td>
+        <td> {{client[8]}} </td>
+        <td> {{client[9]}} </td>
+        <td> {{client[10]}} </td>
     </tr>
     {% endfor %}
     </tbody>
@@ -66,7 +69,11 @@
           null,
           null,
           null,
-          null],
+          null,
+          null,
+          null,
+          null
+        ],
           "createdRow": function ( row, data, index ) {
             if ( data[5] === "Ok" ) {
               $('td', row).eq(5).addClass('table-success');}
@@ -79,7 +86,11 @@
             if ( data[6] === "No recent backup" ) {
               $('td', row).eq(6).addClass('table-danger');}
             if ( data[6] === "Disabled" ) {
-              $('td', row).eq(6).addClass('table-success');}
+            $('td', row).eq(6).addClass('table-success');}
+            if ( data[7] === "0" ) {
+            $('td', row).eq(7).addClass('table-success');}
+            if ( Number(data[7]) > 0 ) {
+            $('td', row).eq(7).addClass('table-danger');}
       }
       });
     });

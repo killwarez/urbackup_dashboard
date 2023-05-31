@@ -1,21 +1,45 @@
-# UrBackup cumulative dashboard
-
-Set of scripts to collect clients backup status from several UrBackup servers and display overall information at one page.
-
-Script **export_clients.sh** used to save clients backup status to CSV file. Used information from Clients table of UrBackup database. Exported records upload to your FTP server where other scripts will run.
-
-File **urbackup-csv-importer.py** will parse CSVs and store status data to database.
-
-Script **urbackup-dashboard-server.py** will get and display clients backup status as data table in browser. Support sorting, filtering, status highlights, paging.
-
-## Install
-
-1. Configure FTP client credentials and location in **export_clients.sh** file, then add it to crontab to run periodically
-
-2. On server machine run **urbackup-csv-importer.py** in repeat to store uploaded CSVs in database with cron or task manager.
-
-3. **urbackup-dashboard-server.py** is Flask application, deploy it to production using [guide](https://flask.palletsprojects.com/en/2.0.x/deploying/) or run it in your test environment.
-
-## Python dependencies
-
-Used python libraries: `csv, sqlite3, glob, re, sys, os, traceback, flask`
+# UrBackup Dashboard - Web server and client
+Set of python scripts to collect UrBackup clients status from [UrBackup Servers](https://www.urbackup.org/download.html) to display on common dashboard.
+### Features:
+- Dashboard: Receive backup status information via REST API as CSV payload
+- Dashboard: Client update API with token authorization
+- Dashboard: UrBackup clients status and errors display
+- Client: UrBackup status collection using UrBackup API
+- Client: UrBackup clients detailed errors collection
+- Client: Auto-update via API 
+### Requirements (Windows)
+1. Python
+2. Python virtual environment
+> pip install virtualenv
+> python -m venv venv
+> .\.venv\Scripts\activate.bat
+3. Libraries
+> pip install -r requirements.txt
+### Running (Windows)
+#### Dashboard:
+Rename empty database to *urbackup_dashboard.db*, then run:
+> cd .\dashboard\
+> python urbackup_dashboard_server.py
+#### Client:
+Set UrBackup server credentials. Add them to *urbackup_export_clients_params.py*, then run:
+> cd .\client\
+> python urbackup_export_clients_status.py
+#### Notifications:
+Configure email delivery in the *urbackup_dashboard_email_params.py* file 
+Schedule script running with Cron or Task Manager
+### Add new client:
+1. Add new token to *DB\urbackup_dashboard.db* -> *api_tokens* table
+2. Add same token to *urbackup_export_clients_params.py* configuration
+### Files and folders
+#### Dashboard:
+- *urbackup_dashboard_server.py* - Flask-based web server
+- *urbackup_dashboard_send_email.py* - Email notification script on backup errors and warnings, should run with external scheduler
+- *urbackup_dashboard_email_params.py* - Jinja-based email template and sending settings; input credentials here before scheduling notifications
+- *urbackup_export_clients_status_update.py* - Client updated script redistribution
+- *urbackup_export_clients_params.py* - Client update requirement dummy file
+- *DB\urbackup_dashboard.db* - SQLite3 dashboard database, add separate API token for every client
+- *CSV\\* - Storage for legacy clients
+- *Templates\\* - Jinja dashboard template
+#### Client:
+- *urbackup_export_clients_status.py* - Client main script
+- *urbackup_export_clients_params.py* - Client configuration, add separate API token for every client
