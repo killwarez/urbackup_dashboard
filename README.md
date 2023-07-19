@@ -11,22 +11,30 @@ Set of Python scripts to collect UrBackup clients' status from multiple [UrBacku
 ### Requirements (Windows)
 1. Python
 2. Python virtual environment
-> pip install virtualenv
-> python -m venv venv
-> .\.venv\Scripts\activate.bat
+```
+pip install virtualenv
+python -m venv venv
+.\.venv\Scripts\activate.bat
+```
 3. Libraries
-> pip install -r requirements.txt
+```
+pip install -r requirements.txt
+```
 ### Running (Windows)
 #### Dashboard:
 Rename empty database to *urbackup_dashboard.db*, then run:
-> cd .\dashboard\
-> python urbackup_dashboard_server.py
+```
+cd .\dashboard\
+python urbackup_dashboard_server.py
+```
 #### Client:
 Set UrBackup server credentials. Add them to *urbackup_export_clients_params.py*, then run:
-> cd .\client\
-> python urbackup_export_clients_status.py
+```
+cd .\client\
+python urbackup_export_clients_status.py
+```
 #### Notifications:
-Configure email delivery in the *urbackup_dashboard_email_params.py* file 
+Configure email delivery in the *urbackup_dashboard_email_params.py* file.  
 Schedule script running with Cron or Task Manager
 ### Add new client:
 1. Add new token to *DB\urbackup_dashboard.db* -> *api_tokens* table
