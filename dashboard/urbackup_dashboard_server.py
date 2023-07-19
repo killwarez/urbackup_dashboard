@@ -2,6 +2,7 @@ from io import TextIOWrapper
 import io
 from flask import Flask, render_template, request, send_file
 import sqlite3, sys, os, urbackup_csv_importer, urbackup_export_clients_status_update
+from datetime import datetime
 
 db_path = os.path.dirname(os.path.abspath(__file__)) + "\\db\\urbackup_dashboard.db"
 client_filename = "urbackup_export_clients_status_new.py"
@@ -114,6 +115,11 @@ def get_latest_version():
     file_obj.seek(0)
 
     return send_file(file_obj, as_attachment=True, download_name=client_filename)
+
+@app.template_filter()
+def format_datetime(value):
+    dateTimeObj = datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
+    return dateTimeObj.strftime("%Y-%m-%d %H:%M")
 
 if __name__ == '__main__':
     app.run()
