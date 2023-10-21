@@ -1,0 +1,351 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+  tr {
+    cursor: pointer;
+  }
+  .dataTables_wrapper {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+
+  .dataTables_wrapper>* {
+    order: 99;
+  }
+
+  .dataTables_wrapper .dataTables_length {
+    order: 1;
+  }
+
+  .dataTables_wrapper>.dt-buttons {
+    order: 2;
+  }
+
+  .dataTables_wrapper .dataTables_filter {
+    order: 3;
+  }
+
+  .dataTables_wrapper .dataTables_info {
+    width: 50%;
+  }
+
+  .dataTables_wrapper .dataTable {
+    width: 100% !important;
+  }
+</style>
+
+<div class="modal fade" id="editmodal" tabindex="-1" role="dialog" aria-labelledby="editmodallabes" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Edit values for recipient</h5>
+      </div>
+      <div class="modal-body">
+        <form>
+          <div class="form-group">
+            <label for="message-text" class="col-form-label">Server:</label>
+            <textarea class="form-control" id="servername-text"></textarea>
+            <label for="message-text" class="col-form-label">Client:</label>
+            <textarea class="form-control" id="clientname-text"></textarea>
+            <label for="message-text" class="col-form-label">Email:</label>
+            <textarea class="form-control" id="email-text"></textarea>
+            <label for="message-text" class="col-form-label">Sending frequency in minutes:</label>
+            <textarea class="form-control" id="freq-text"></textarea>
+          </div>
+        </form>
+        <div>
+          <label for="message-text" class="col-form-label">Description:
+            <p>Set {server_name} and {client_name} to receive user notification on single device issues
+            <p>Set {server_name} and **ALL** as client name to receive single user notification about all server clients issues
+            <p>Set **ADMIN** and **ADMIN** to receive single detailed notification about all dashboard clients
+            <p>Separate emails with comma
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="modal-close-btn" type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button id="modal-save-btn" type="button" class="btn btn-primary">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="addmodal" tabindex="-1" role="dialog" aria-labelledby="addmodallabes" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Add new recipient</h5>
+      </div>
+      <div class="modal-body">
+        <form>
+          <div class="form-group">
+            <label for="message-text" class="col-form-label">Server:</label>
+            <textarea class="form-control" id="addservername-text"></textarea>
+            <label for="message-text" class="col-form-label">Client:</label>
+            <textarea class="form-control" id="addclientname-text"></textarea>
+            <label for="message-text" class="col-form-label">Email:</label>
+            <textarea class="form-control" id="addemail-text"></textarea>
+            <label for="message-text" class="col-form-label">Sending frequency in minutes:</label>
+            <textarea class="form-control" id="addfreq-text"></textarea>
+          </div>
+        </form>
+        <div>
+          <label for="message-text" class="col-form-label">Description:
+            <p>Set {server_name} and {client_name} to receive user notification on single device issues
+            <p>Set {server_name} and **ALL** as client name to receive single user notification about all server clients issues
+            <p>Set **ADMIN** and **ADMIN** to receive single detailed notification about all dashboard clients
+            <p>Separate emails with comma
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="addmodal-close-btn" type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button id="addmodal-save-btn" type="button" class="btn btn-primary">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <table id="data" class="table table-hover table-striped table-sm">
+    <thead>
+      <tr>
+        {% for header in headers %}
+        <th class="dt-head-center"> {{ header }} </th>
+        {% endfor %}
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for client in content %}
+      <tr>
+        <td> {{client[0]}} </td>
+        <td> {{client[1]}} </td>
+        <td> {{client[2]}} </td>
+        <td class="dt-body-center"> {{client[3]}} </td>
+        <td> {{client[4]|format_datetime}} </td>
+        <td> {{client[5]}} </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+
+    <tfoot>
+      <tr>
+        {% for header in headers %}
+        <th></th>
+        {% endfor %}
+      </tr>
+    </tfoot>
+
+  </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  $(document).ready(function () {
+    $('#data').DataTable({
+      initComplete: function () {
+        this.api().columns([0]).every(function () {
+          var column = this;
+          var select = $('<select><option value="">Show all</option></select>')
+            .appendTo($(column.footer()).empty())
+            .on('change', function () {
+              var val = $.fn.dataTable.util.escapeRegex(
+                $(this).val()
+              );
+              column
+                .search(val ? '^' + val + '$' : '', true, false)
+                .draw();
+            });
+          column.data().unique().sort().each(function (d, j) {
+            select.append('<option value="' + d + '">' + d + '</option>')
+          });
+        });
+      },
+      "pageLength": -1,
+      "lengthMenu": [[20, 40, 60, -1], [20, 40, 60, "All"]],
+      columns: [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      columnDefs: [
+        {
+          target: 5,
+          visible: false,
+          searchable: false
+        },
+        {
+          target: 0,
+          orderData: [5, 0],
+        }
+      ],
+      dom: 'Blfrtip',
+      select: true,
+      buttons: [
+        {
+          text: 'Add',
+          action: function () {
+            $("#addmodal").modal("show");
+          }
+        },
+        {
+          extend: 'selected',
+          text: 'Edit',
+          action: function () {
+            var selectedRows = this.rows('.selected').data();
+            var selectedData = [];
+            selectedData.push({
+              servername: selectedRows[0][0],
+              clientname: selectedRows[0][1],
+              // email: selectedRows[0][2]
+            });
+            $.ajax({
+              url: '/getemailrecipient',
+              method: 'POST',
+              data: JSON.stringify(selectedData),
+              contentType: 'application/json',
+              success: function (recipient) {
+                document.getElementById("servername-text").value = recipient[0].servername;
+                document.getElementById("clientname-text").value = recipient[0].clientname;
+                document.getElementById("email-text").value = recipient[0].email;
+                document.getElementById("freq-text").value = recipient[0].freq;
+                $("#editmodal").modal("show");
+              },
+              error: function (error) {
+                console.log('Error fetching child data:', error);
+              }
+            });
+          }
+        },
+        {
+          extend: 'selected',
+          text: 'Delete',
+          action: function () {
+            var selectedRows = this.rows('.selected').data();
+            var selectedData = [];
+            selectedData.push({
+              servername: selectedRows[0][0],
+              clientname: selectedRows[0][1],
+              // email: selectedRows[0][2]
+            });
+            $.ajax({
+              url: '/deleteemailrecipient',
+              method: 'POST',
+              data: JSON.stringify(selectedData),
+              contentType: 'application/json',
+              success: function (recipient) {
+                location.reload()
+              },
+              error: function (error) {
+                console.log('Error deleting data:', error);
+              }
+            });
+          }
+        },
+      ]
+    });
+  });
+</script>
+<script>
+  // Close edit modal
+  document.getElementById("modal-close-btn").addEventListener("click", function () {
+    document.getElementById("servername-text").value = '';
+    document.getElementById("clientname-text").value = '';
+    document.getElementById("email-text").value = '';
+    document.getElementById("freq-text").value = '';
+    $("#editmodal").modal("hide");
+  });
+
+  // Close new modal
+  document.getElementById("addmodal-close-btn").addEventListener("click", function () {
+    document.getElementById("addservername-text").value = '';
+    document.getElementById("addclientname-text").value = '';
+    document.getElementById("addemail-text").value = '';
+    document.getElementById("addfreq-text").value = '';
+    $("#addmodal").modal("hide");
+  });
+
+  document.getElementById("modal-save-btn").addEventListener("click", function () {
+    servername = document.getElementById("servername-text").value;
+    clientname = document.getElementById("clientname-text").value;
+    email = document.getElementById("email-text").value;
+    freq = document.getElementById("freq-text").value;
+
+    // Perform your AJAX POST request here
+    // Example: Replace the URL with your actual API endpoint
+    var table = $('#data').DataTable();
+    var selectedRows = table.rows('.selected').data();
+
+    var selectedData = [];
+    selectedData.push({
+      servernameold: selectedRows[0][0],
+      clientnameold: selectedRows[0][1],
+      servernamenew: servername.trim(),
+      clientnamenew: clientname.trim(),
+      emailnew: email.trim(),
+      freqnew: freq.trim()
+    });
+
+    $.ajax({
+      url: '/setemailrecipient',
+      method: 'POST',
+      data: JSON.stringify(selectedData),
+      contentType: 'application/json',
+      success: function () {
+        // Handle success
+        document.getElementById("servername-text").value = '';
+        document.getElementById("clientname-text").value = '';
+        document.getElementById("email-text").value = '';
+        document.getElementById("freq-text").value = '';
+        $("#editmodal").modal("hide");
+        location.reload();
+      },
+      error: function (error) {
+        console.log('Error saving data:', error);
+      }
+    });
+  });
+
+  document.getElementById("addmodal-save-btn").addEventListener("click", function () {
+    servername = document.getElementById("addservername-text").value;
+    clientname = document.getElementById("addclientname-text").value;
+    email = document.getElementById("addemail-text").value;
+    freq = document.getElementById("addfreq-text").value;
+
+    // Perform your AJAX POST request here
+    var selectedData = [];
+    selectedData.push({
+      servernamenew: servername.trim(),
+      clientnamenew: clientname.trim(),
+      emailnew: email.trim(),
+      freqnew: freq.trim()
+    });
+
+    $.ajax({
+      url: '/addemailrecipient',
+      method: 'POST',
+      data: JSON.stringify(selectedData),
+      contentType: 'application/json',
+      success: function () {
+        // Handle success
+        document.getElementById("addservername-text").value = '';
+        document.getElementById("addclientname-text").value = '';
+        document.getElementById("addemail-text").value = '';
+        document.getElementById("addfreq-text").value = '';
+        $("#addmodal").modal("hide");
+        location.reload();
+      },
+      error: function (error) {
+        console.log('Error adding data:', error);
+      }
+    });
+  });
+</script>
+{% endblock %}

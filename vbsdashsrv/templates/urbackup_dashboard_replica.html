@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+  .dataTables_wrapper {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+
+  .dataTables_wrapper>* {
+    order: 99;
+  }
+
+  .dataTables_wrapper .dataTables_length {
+    order: 1;
+  }
+
+  .dataTables_wrapper>.dt-buttons {
+    order: 2;
+  }
+
+  .dataTables_wrapper .dataTables_filter {
+    order: 3;
+  }
+
+  .dataTables_wrapper .dataTables_info {
+    width: 50%;
+  }
+
+  .dataTables_wrapper .dataTable {
+    width: 100% !important;
+  }
+
+  td.details-control {
+    background: url('/static/logs_open.png') no-repeat center center;
+    cursor: pointer;
+  }
+
+  tr.shown td.details-control {
+    background: url('/static/logs_close.png') no-repeat center center;
+  }
+
+  td.details-control.notes-added {
+    background: url('/static/logs_open.png') no-repeat right center, url('/static/note.png') no-repeat left center;
+    cursor: pointer;
+  }
+
+  tr.shown td.details-control.notes-added {
+    background: url('/static/logs_close.png') no-repeat right center, url('/static/note.png') no-repeat left center;
+  }
+
+  .table-logs {
+    font-size: 0.7rem;
+    padding: 0.1rem;
+  }
+</style>
+
+<div class="container-fluid">
+  <table id="data" class="table table-hover table-striped table-sm">
+    <thead>
+      <tr>
+        {% for header in headers %}
+        <th class="dt-head-center"> {{ header }} </th>
+        {% endfor %}
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for client in content %}
+      <tr>
+        <td> {{client[0]}} </td>
+        <td class="dt-body-center"> {{client[1]|format_replica_state}} </td>
+        <td class="dt-body-center"> {{client[2]|format_replica_health}} </td>
+        <td class="dt-body-center"> {{client[3]|format_replica_mode}} </td>
+        <td> {{client[4]}} </td>
+        <td> {{client[5]}} </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+
+    <tfoot>
+      <tr>
+        {% for header in headers %}
+        <th class="dt-head-center"></th>
+        {% endfor %}
+      </tr>
+    </tfoot>
+  </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  $(document).ready(function () {
+    $('#data').DataTable({
+      initComplete: function () {
+        this.api().columns([0, 1, 5, 6]).every(function () {
+          var column = this;
+          // var select = $('<select id="servers"><option value="">Show all</option></select>')
+          //   .appendTo($(column.footer()).empty())
+          //   .on('change', function () {
+          //     var val = $.fn.dataTable.util.escapeRegex(
+          //       $(this).val()
+          //     );
+          //     column
+          //       .search(val ? '^' + val + '$' : '', true, false)
+          //       .draw();
+          //   });
+          // column.data().unique().sort().each(function (d, j) {
+          //   select.append('<option value="' + d + '">' + d + '</option>')
+          // });
+        });
+      },
+      "pageLength": -1,
+      "lengthMenu": [[15, 25, 50, -1], [15, 25, 50, "All"]],
+      columns: [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      columnDefs: [
+        {
+          target: 2,
+          orderData: [2, 0, 1],
+        }
+      ],
+      "createdRow": function (row, data, index) {
+        if (data[1] === "Critical" || data[2] === "Critical") {
+          $('td', row).addClass('table-danger');
+        } else if (data[1] === "Paused" || data[2] === "Warning") {
+          $('td', row).addClass('table-warning');
+        }
+      },
+      dom: 'Blfrtip',
+    });
+  });
+</script>
+
+{% endblock %}

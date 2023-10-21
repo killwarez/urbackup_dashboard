@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+  .dataTables_wrapper {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+
+  .dataTables_wrapper>* {
+    order: 99;
+  }
+
+  .dataTables_wrapper .dataTables_length {
+    order: 1;
+  }
+
+  .dataTables_wrapper>.dt-buttons {
+    order: 2;
+  }
+
+  .dataTables_wrapper .dataTables_filter {
+    order: 3;
+  }
+
+  .dataTables_wrapper .dataTables_info {
+    width: 50%;
+  }
+
+  .dataTables_wrapper .dataTable {
+    width: 100% !important;
+  }
+
+  td.details-control {
+    background: url('/static/logs_open.png') no-repeat center center;
+    cursor: pointer;
+  }
+
+  tr.shown td.details-control {
+    background: url('/static/logs_close.png') no-repeat center center;
+  }
+
+  td.details-control.notes-added {
+    background: url('/static/logs_open.png') no-repeat right center, url('/static/note.png') no-repeat left center;
+    cursor: pointer;
+  }
+
+  tr.shown td.details-control.notes-added {
+    background: url('/static/logs_close.png') no-repeat right center, url('/static/note.png') no-repeat left center;
+  }
+
+  .table-logs {
+    font-size: 0.7rem;
+    padding: 0.1rem;
+  }
+</style>
+
+<div class="modal fade" id="notemodal" tabindex="-1" role="dialog" aria-labelledby="notemodallabes" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modal-label">Enter a note for device</h5>
+        <!-- <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button> -->
+      </div>
+      <div class="modal-body">
+        <form>
+          <div class="form-group">
+            <label for="message-text" class="col-form-label">Note:</label>
+            <textarea class="form-control" id="message-text"></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button id="modal-close-btn" type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button id="modal-save-btn" type="button" class="btn btn-primary">Save note</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid">
+  <table id="data" class="table table-hover table-striped table-sm">
+    <thead>
+      <tr>
+        {% for header in headers %}
+        <th class="dt-head-center"> {{ header }} </th>
+        {% endfor %}
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for client in content %}
+      <tr>
+        <td> {{client[0]}} </td>
+        <td> {{client[1]}} </td>
+        <td class="dt-body-center"> {{client[2]|format_datetime}} </td>
+        <td class="dt-body-center"> {{client[3]|format_datetime}} </td>
+        <td class="dt-body-center"> {{client[4]|format_datetime}} </td>
+        <td class="dt-body-center"> {{client[5]}} </td>
+        <td class="dt-body-center"> {{client[6]}} </td>
+        <td class="dt-body-center"> {{client[7]}} </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+
+    <tfoot>
+      <tr>
+        {% for header in headers %}
+        <th class="dt-head-center"></th>
+        {% endfor %}
+      </tr>
+    </tfoot>
+  </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  $(document).ready(function () {
+    $('#data').DataTable({
+      initComplete: function () {
+        this.api().columns([0, 1, 5, 6]).every(function () {
+          var column = this;
+          var select = $('<select id="servers"><option value="">Show all</option></select>')
+            .appendTo($(column.footer()).empty())
+            .on('change', function () {
+              var val = $.fn.dataTable.util.escapeRegex(
+                $(this).val()
+              );
+              column
+                .search(val ? '^' + val + '$' : '', true, false)
+                .draw();
+            });
+          column.data().unique().sort().each(function (d, j) {
+            select.append('<option value="' + d + '">' + d + '</option>')
+          });
+        });
+      },
+      "pageLength": -1,
+      "lengthMenu": [[15, 25, 50, -1], [15, 25, 50, "All"]],
+      columns: [
+        null,
+        null,
+        { "width": "200px" },
+        null,
+        { "width": "200px" },
+        null,
+        null,
+        null
+      ],
+      columnDefs: [
+        {
+          target: 2,
+          orderData: [2, 0, 1],
+        }
+      ],
+      "createdRow": function (row, data, index) {
+        if (data[5] === "Ok") {
+          $('td', row).eq(5).addClass('table-success');
+        }
+        if (data[5] === "No recent backup") {
+          $('td', row).eq(5).addClass('table-danger');
+        }
+        if (data[5] === "Disabled") {
+          $('td', row).eq(5).addClass('table-success');
+        }
+        if (data[6] === "Ok") {
+          $('td', row).eq(6).addClass('table-success');
+        }
+        if (data[6] === "No recent backup") {
+          $('td', row).eq(6).addClass('table-danger');
+        }
+        if (data[6] === "Disabled") {
+          $('td', row).eq(6).addClass('table-success');
+        }
+      },
+      dom: 'Blfrtip',
+      select: true,
+      buttons: [
+        {
+          extend: 'selected',
+          text: 'Note',
+          action: function () {
+            var selectedRows = this.rows('.selected').data();
+            var selectedData = [];
+            selectedData.push({
+              servername: selectedRows[0][0],
+              clientname: selectedRows[0][1]
+            });
+            $.ajax({
+              url: '/getnote',
+              method: 'POST',
+              data: JSON.stringify(selectedData),
+              contentType: 'application/json',
+              success: function (notetext) {
+                document.getElementById("message-text").value = notetext;
+                $("#notemodal").modal("show");
+              },
+              error: function () {
+                console.log('Error fetching child data');
+              }
+            });
+          }
+        },
+        {
+          extend: 'selected',
+          text: 'Delete',
+          action: function () {
+            var selectedRows = this.rows('.selected').data();
+            var selectedData = [];
+            selectedData.push({
+              servername: selectedRows[0][0],
+              clientname: selectedRows[0][1]
+            });
+            $.ajax({
+              url: '/deletearchived',
+              method: 'POST',
+              data: JSON.stringify(selectedData),
+              contentType: 'application/json',
+              success: function () {
+                location.reload();
+              },
+              error: function () {
+                console.log('Error removing archive data');
+              }
+            });
+          }
+        }
+      ]
+    });
+  });
+</script>
+<script>
+  // Close modal
+  document.getElementById("modal-close-btn").addEventListener("click", function () {
+    var inputElement = document.getElementById("message-text");
+    inputElement.value = "";
+    $("#notemodal").modal("hide");
+  });
+
+  // AJAX request when the 'Save' button is clicked
+  document.getElementById("modal-save-btn").addEventListener("click", function () {
+    text = document.getElementById("message-text").value;
+    if (text.trim() !== "") {
+      // Perform your AJAX POST request here
+      // Example: Replace the URL with your actual API endpoint
+
+      var table = $('#data').DataTable();
+      var selectedRows = table.rows('.selected').data();
+      var selectedData = [];
+      selectedData.push({
+        servername: selectedRows[0][0],
+        clientname: selectedRows[0][1],
+        note: text.trim()
+      });
+
+      $.ajax({
+        url: '/setnote',
+        method: 'POST',
+        data: JSON.stringify(selectedData),
+        contentType: 'application/json',
+        success: function () {
+          // Handle success
+          var inputElement = document.getElementById("message-text");
+          inputElement.value = "";
+          $("#notemodal").modal("hide");
+        },
+        error: function () {
+          // Handle error
+          alert("Failed to save data. Please try again.");
+        }
+      });
+    } else {
+      var inputElement = document.getElementById("message-text");
+      $("#notemodal").modal("hide");
+
+    }
+  });
+</script>
+
+{% endblock %}

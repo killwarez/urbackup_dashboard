@@ -1,0 +1,32 @@
+<html>
+
+<head>
+    <title>Outdated backup alert</title>
+</head>
+
+<body>
+    <h3>Outdated backup alert</h1>
+        <p style="max-width: 900px;">
+            We kindly request your assistance in ensuring that the affected computers remain online overnight for the next scheduled backup cycle. Below is a list of the computers currently experiencing backup discrepancies. Please review and ensure that they remain powered on tonight:
+        </p>
+        <table id="data" style="border: 1px solid black; border-collapse: collapse;">
+            <thead style="border: 1px solid black; padding: 8px 16px;">
+                <tr>
+                    <th style="border: 0px solid black; padding: 8px 16px;">Computer</th>
+                    <th style="border: 0px solid black; padding: 8px 16px;">Last backup status</th>
+                    <!-- <th style="border: 0px solid black; padding: 8px 16px;">Last file backup status</th> -->
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in clients %}
+                <tr>
+                    <td style="border: 1px solid black; padding: 8px 16px;">{{ row[0] }}</td>
+                    <td style="border: 1px solid black; padding: 8px 16px; text-align: center">{{ row[1] }}</td>
+                    <!-- <td style="border: 1px solid black; padding: 8px 16px; text-align: center">{{ row[2] }}</td> -->
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+</body>
+
+</html>

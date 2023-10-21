@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+  tr {
+    cursor: pointer;
+  }
+</style>
+
+<div class="container">
+  <table id="data" class="table table-hover table-striped table-sm">
+    <thead>
+      <tr>
+        {% for header in headers %}
+        <th class="dt-head-center"> {{ header }} </th>
+        {% endfor %}
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr>
+        {% for client in content %}
+        <td> {{client[0]}} </td>
+        <td class="dt-body-center"> {{client[1]}} </td>
+        <td class="dt-body-center"> {{client[2]}} </td>
+        <td class="dt-body-center"> {{client[3]}} </td>
+        <td class="dt-body-center"> {{client[4]}} </td>
+        <td class="dt-body-center"> {{client[5]}} </td>
+        <td class="dt-body-center"> {{client[6]}} </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+
+    <tfoot>
+      <tr>
+        {% for header in headers %}
+        <th></th>
+        {% endfor %}
+      </tr>
+    </tfoot>
+
+  </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  $(document).ready(function () {
+    $('#data').DataTable({
+      initComplete: function () {
+        this.api().columns([0]).every(function () {
+          var column = this;
+          var select = $('<select><option value="">Show all</option></select>')
+            .appendTo($(column.footer()).empty())
+            .on('change', function () {
+              var val = $.fn.dataTable.util.escapeRegex(
+                $(this).val()
+              );
+              column
+                .search(val ? '^' + val + '$' : '', true, false)
+                .draw();
+            });
+          column.data().unique().sort().each(function (d, j) {
+            select.append('<option value="' + d + '">' + d + '</option>')
+          });
+        });
+      },
+      "pageLength": -1,
+      "lengthMenu": [[20, 40, 60, -1], [20, 40, 60, "All"]],
+      columns: [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      columnDefs: [
+        {
+          target: 5,
+          visible: false,
+          searchable: false
+        },
+        {
+          target: 0,
+          orderData: [5, 0],
+        }
+      ],
+      "createdRow": function (row, data, index) {
+        if (data[1] === "0") {
+          $('td', row).eq(1).addClass('table-success');
+        }
+        if (data[1] !== "0") {
+          $('td', row).eq(1).addClass('table-warning');
+        }
+        if (data[2] === "0") {
+          $('td', row).eq(2).addClass('table-success');
+        }
+        if (data[2] !== "0") {
+          $('td', row).eq(2).addClass('table-warning');
+        }
+        if (data[3] === "0") {
+          $('td', row).eq(3).addClass('table-success');
+        }
+        if (data[3] !== "0") {
+          $('td', row).eq(3).addClass('table-danger');
+        }
+        if (data[4] === "0") {
+          $('td', row).eq(4).addClass('table-success');
+        }
+        if (data[4] !== "0") {
+          $('td', row).eq(4).addClass('table-danger');
+        }
+      }
+    });
+  });
+</script>
+<script>
+  $(document).ready(function () {
+    var table = $('#data').DataTable();
+
+    $('#data tbody').on('click', 'tr', function () {
+      var rowData = table.row(this).data();
+      var name = rowData[0]; // Assuming name is in the first cell
+      window.location.href = '/clients?server=' + encodeURIComponent(name);
+    });
+  });
+</script>
+{% endblock %}

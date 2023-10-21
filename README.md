@@ -1,4 +1,5 @@
 # UrBackup Dashboard - Web server and client
+Readme have to be updated.
 Set of Python scripts to collect UrBackup clients' status from multiple [UrBackup Servers](https://www.urbackup.org/download.html) to display on the single dashboard. Email notifications of backup issues.
 ### Features:
 - Dashboard: Receive backup status information via REST API as CSV payload

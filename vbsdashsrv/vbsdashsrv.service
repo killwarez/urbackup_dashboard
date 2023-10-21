@@ -1,0 +1,13 @@
+[Unit]
+Description=UrBackup Dashboard Server
+After=network.target
+
+[Service]
+Type=simple
+RemainAfterExit=no
+ExecStart=/usr/bin/bash /opt/vbsdashsrv/start.sh
+TimeoutStartSec=30
+User=vbsdashsrv
+
+[Install]
+WantedBy=default.target

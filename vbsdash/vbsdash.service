@@ -1,0 +1,13 @@
+[Unit]
+Description=urBackup Dashboard Client
+After=network.target
+
+[Service]
+Type=simple
+RemainAfterExit=no
+ExecStart=/usr/bin/bash /opt/vbsdash/start.sh
+TimeoutStartSec=30
+User=vbsdash
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+  tr {
+    cursor: pointer;
+  }
+
+  .dataTables_wrapper {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+
+  .dataTables_wrapper>* {
+    order: 99;
+  }
+
+  .dataTables_wrapper .dataTables_length {
+    order: 1;
+  }
+
+  .dataTables_wrapper>.dt-buttons {
+    order: 2;
+  }
+
+  .dataTables_wrapper .dataTables_filter {
+    order: 3;
+  }
+
+  .dataTables_wrapper .dataTables_info {
+    width: 50%;
+  }
+
+  .dataTables_wrapper .dataTable {
+    width: 100% !important;
+  }
+</style>
+
+
+<div class="modal fade" id="mapserver" tabindex="-1" role="dialog" aria-labelledby="addmodallabes" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="ModalLabel">Map client to server</h5>
+      </div>
+      <div class="modal-body">
+        <form>
+          <div class="form-group">
+            <label for="message-text" class="col-form-label">Session:</label>
+            <textarea class="form-control" id="sessionname-text" disabled="true"></textarea>
+            <label for="message-text" class="col-form-label">Computer name:</label>
+            <textarea class="form-control" id="clientname-text" disabled="true"></textarea>
+            <label for="message-text" class="col-form-label">UrBackup server name:</label>
+            <textarea class="form-control" id="servername-text"></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button id="addmodal-close-btn" type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button id="addmodal-save-btn" type="button" class="btn btn-primary">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<div class="container">
+  <table id="data" class="table table-hover table-striped table-sm">
+    <thead>
+      <tr>
+        {% for header in headers %}
+        <th class="dt-head-center"> {{ header }} </th>
+        {% endfor %}
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for client in content %}
+      <tr>
+        <td> {{client[0]}} </td>
+        <td> {{client[1]}} </td>
+        <td> {{client[2]}} </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+
+    <tfoot>
+      <tr>
+        {% for header in headers %}
+        <th></th>
+        {% endfor %}
+      </tr>
+    </tfoot>
+
+  </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  $(document).ready(function () {
+    $('#data').DataTable({
+      initComplete: function () {
+        this.api().columns([0]).every(function () {
+          var column = this;
+          var select = $('<select><option value="">Show all</option></select>')
+            .appendTo($(column.footer()).empty())
+            .on('change', function () {
+              var val = $.fn.dataTable.util.escapeRegex(
+                $(this).val()
+              );
+              column
+                .search(val ? '^' + val + '$' : '', true, false)
+                .draw();
+            });
+          column.data().unique().sort().each(function (d, j) {
+            select.append('<option value="' + d + '">' + d + '</option>')
+          });
+        });
+      },
+      "pageLength": -1,
+      "lengthMenu": [[20, 40, 60, -1], [20, 40, 60, "All"]],
+      columns: [
+        null,
+        null,
+        null
+      ],
+      columnDefs: [
+      ],
+      dom: 'Blfrtip',
+      select: true,
+      buttons: [
+        {
+          text: 'Map server',
+          action: function () {
+            var selectedRows = this.rows('.selected').data();
+            var selectedData = [];
+            selectedData.push({
+              sessionname: selectedRows[0][0],
+              clientname: selectedRows[0][1],
+            });
+            $.ajax({
+              url: '/getsessionmapping',
+              method: 'POST',
+              data: JSON.stringify(selectedData),
+              contentType: 'application/json',
+              success: function (recipient) {
+                document.getElementById("sessionname-text").value = recipient[0].sessionname;
+                document.getElementById("clientname-text").value = recipient[0].clientname;
+                document.getElementById("servername-text").value = recipient[0].servername;
+                $("#mapserver").modal("show");
+              },
+              error: function (error) {
+                console.log('Error fetching child data:', error);
+              }
+            });
+          }
+        },
+      ]
+    });
+  });
+</script>
+<script>
+  $('#addmodal-close-btn').click(function () {
+    var modal = $('#mapserver');
+    modal.find('.modal-body #sessionname-text').val('');
+    modal.find('.modal-body #clientname-text').val('');
+    modal.find('.modal-body #servername-text').val('');
+    modal.modal('hide');
+  });
+
+  $('#addmodal-save-btn').click(function () {
+    var table = $('#data').DataTable();
+    var selectedRows = table.rows('.selected').data();
+    var selectedData = [];
+    selectedData.push({
+      sessionname: document.getElementById("sessionname-text").value.trim(),
+      clientname: document.getElementById("clientname-text").value.trim(),
+      servername: document.getElementById("servername-text").value.trim(),
+    });
+    $.ajax({
+      url: '/setsessionmapping',
+      method: 'POST',
+      data: JSON.stringify(selectedData),
+      contentType: 'application/json',
+      success: function () {
+        document.getElementById("sessionname-text").value = '';
+        document.getElementById("clientname-text").value = '';
+        document.getElementById("servername-text").value = '';
+        $("#mapserver").modal("hide");
+      },
+      error: function (error) {
+        console.log('Error storing data:', error);
+      }
+    });
+  }
+  );
+</script>
+{% endblock %}

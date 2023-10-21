@@ -1,0 +1,389 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+  .dataTables_wrapper {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+
+  .dataTables_wrapper>* {
+    order: 99;
+  }
+
+  .dataTables_wrapper .dataTables_length {
+    order: 1;
+  }
+
+  .dataTables_wrapper>.dt-buttons {
+    order: 2;
+  }
+
+  .dataTables_wrapper .dataTables_filter {
+    order: 3;
+  }
+
+  .dataTables_wrapper .dataTables_info {
+    width: 50%;
+  }
+
+  .dataTables_wrapper .dataTable {
+    width: 100% !important;
+  }
+
+  td.details-control {
+    background: url('/static/logs_open.png') no-repeat right center;
+    cursor: pointer;
+  }
+
+  tr.shown td.details-control {
+    background: url('/static/logs_close.png') no-repeat right center;
+  }
+
+  td.details-control.notes-added {
+    background: url('/static/logs_open.png') no-repeat right center, url('/static/note.png') no-repeat left center;
+    cursor: pointer;
+  }
+
+  tr.shown td.details-control.notes-added {
+    background: url('/static/logs_close.png') no-repeat right center, url('/static/note.png') no-repeat left center;
+  }
+
+  td.notes-added {
+    background: url('/static/note.png') no-repeat left center;
+    cursor: pointer;
+  }
+
+  tr.shown td.notes-added {
+    background: url('/static/note.png') no-repeat left center;
+  }
+
+  .table-logs {
+    font-size: 0.7rem;
+    padding: 0.1rem;
+  }
+</style>
+
+<div class="modal fade" id="notemodal" tabindex="-1" role="dialog" aria-labelledby="notemodallabes" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Enter a note for device</h5>
+        <!-- <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button> -->
+      </div>
+      <div class="modal-body">
+        <form>
+          <div class="form-group">
+            <label for="message-text" class="col-form-label">Note:</label>
+            <textarea class="form-control" id="message-text"></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button id="modal-close-btn" type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button id="modal-save-btn" type="button" class="btn btn-primary">Save note</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid">
+  <table id="data" class="table table-hover table-striped table-sm">
+    <thead>
+      <tr>
+        {% for header in headers %}
+        <th class="dt-head-center"> {{ header }} </th>
+        {% endfor %}
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for client in content %}
+      <tr>
+        <td class="icons"></td>
+        <td> {{client[1]}} </td>
+        <td> {{client[2]}} </td>
+        <td class="dt-body-center"> {{client[3]|format_datetime}} </td>
+        <td class="dt-body-center"> {{client[4]|format_datetime}} </td>
+        <td class="dt-body-center"> {{client[5]|format_datetime}} </td>
+        <td class="dt-body-center"> {{client[6]}} </td>
+        <td class="dt-body-center"> {{client[7]}} </td>
+        <td class="dt-body-center"> {{client[8]}} </td>
+        <td class="dt-body-center"> {{client[9]}} </td>
+        <td class="dt-body-center"> {{client[10]}}</td>
+        <td> {{client[11]}}</td>
+        <td> {{client[12]}}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+
+    <tfoot>
+      <tr>
+        {% for header in headers %}
+        <th></th>
+        {% endfor %}
+      </tr>
+    </tfoot>
+
+  </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  $(document).ready(function () {
+    $('#data').DataTable({
+      initComplete: function () {
+        this.api().columns([1, 2, 6, 7]).every(function () {
+          var column = this;
+          var select = $('<select id="servers"><option value="">Show all</option></select>')
+            .appendTo($(column.footer()).empty())
+            .on('change', function () {
+              var val = $.fn.dataTable.util.escapeRegex(
+                $(this).val()
+              );
+              column
+                .search(val ? '^' + val + '$' : '', true, false)
+                .draw();
+            });
+          column.data().unique().sort().each(function (d, j) {
+            select.append('<option value="' + d + '">' + d + '</option>')
+          });
+        });
+      },
+      "pageLength": 15,
+      "lengthMenu": [[15, 25, 50, -1], [15, 25, 50, "All"]],
+      "order": [[1, "asc"], [2, "asc"]],
+      columns: [
+        {
+          // 'className': 'details-control',
+          'orderable': false,
+          'data': null,
+          'defaultContent': '',
+          'width': '30px'
+        },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      columnDefs: [
+        {
+          target: 11,
+          visible: false,
+          searchable: false
+        },
+        {
+          target: 12,
+          visible: false,
+          searchable: false
+        }
+      ],
+      "createdRow": function (row, data, index) {
+        if (data[6] === "Ok") {
+          $('td', row).eq(6).addClass('table-success');
+        }
+        if (data[6] === "No recent backup") {
+          $('td', row).eq(6).addClass('table-danger');
+        }
+        if (data[6] === "Disabled") {
+          $('td', row).eq(6).addClass('table-success');
+        }
+        if (data[7] === "Ok") {
+          $('td', row).eq(7).addClass('table-success');
+        }
+        if (data[7] === "No recent backup") {
+          $('td', row).eq(7).addClass('table-danger');
+        }
+        if (data[7] === "Disabled") {
+          $('td', row).eq(7).addClass('table-success');
+        }
+        if (data[8] === "0") {
+          $('td', row).eq(8).addClass('table-success');
+        }
+        if (Number(data[8]) > 0) {
+          $('td', row).eq(8).addClass('table-danger');
+        }
+        if (data[11] !== "0" && data[11] !== "None") {
+          $('td', row).eq(0).addClass('details-control');
+        }
+        if (data[12] !== "0" && data[12] !== "None" && data[12] !== "") {
+          $('td', row).eq(0).addClass('notes-added');
+        }
+      },
+      dom: 'Blfrtip',
+      select: true,
+      buttons: [
+        {
+          extend: 'selected',
+          text: 'Archive',
+          action: function () {
+            var selectedRows = this.rows('.selected').data();
+            var selectedData = [];
+            for (var i = 0; i < selectedRows.length; i++) {
+              selectedData.push({
+                servername: selectedRows[i][1],
+                clientname: selectedRows[i][2]
+              });
+            }
+            this.rows('.selected').remove().draw();
+            $.ajax({
+              url: '/archive',
+              method: 'POST',
+              data: JSON.stringify(selectedData),
+              contentType: 'application/json',
+              success: function (response) {
+                console.log('Archive successful:', response);
+              },
+              error: function (error) {
+                console.error('Error archiving:', error);
+              }
+            });
+          }
+        },
+        {
+          extend: 'selected',
+          text: 'Note',
+          action: function () {
+            var selectedRows = this.rows('.selected').data();
+            var selectedData = [];
+            selectedData.push({
+              servername: selectedRows[0][1],
+              clientname: selectedRows[0][2]
+            });
+            $.ajax({
+              url: '/getnote',
+              method: 'POST',
+              data: JSON.stringify(selectedData),
+              contentType: 'application/json',
+              success: function (notetext) {
+                document.getElementById("message-text").value = notetext;
+                $("#notemodal").modal("show");
+              },
+              error: function () {
+                console.log('Error fetching child data');
+              }
+            });
+          }
+        }
+      ]
+    });
+    // const urlParams = new URLSearchParams(window.location.search);
+    // const paramValue = urlParams.get('server');
+    // console.log('Value of "server":', paramValue);
+  });
+</script>
+<script>
+  // Filter clients output by ?server= param
+  $(document).ready(function () {
+    // Initialize DataTables
+    var table = $('#data').DataTable();
+
+    // Check for query parameters
+    var urlParams = new URLSearchParams(window.location.search);
+    var filterValue = urlParams.get('server');
+
+    // Set the filter if parameter is present
+    if (filterValue !== null) {
+      // Set select value
+      $('#servers').val(filterValue);
+      // Apply filter to the first column
+      table.columns(1).search(filterValue).draw();
+    }
+  });
+
+  // Roll down logs
+  $('#data tbody').on('click', 'td.details-control', function () {
+    // Initialize DataTables
+    var table = $('#data').DataTable();
+
+    var tr = $(this).closest('tr');
+    var row = table.row(tr);
+
+    if (row.child.isShown()) {
+      // This row is already open - close it
+      row.child.hide();
+      tr.removeClass('shown');
+    }
+    else {
+      // Open this row
+      var childTableHTML = '';
+
+      // Simulate an AJAX call to fetch dynamic child data
+      var rowData = table.row(this).data();
+      var selectedData = [];
+      selectedData.push({
+        servername: rowData[1],
+        logid: rowData[11]
+      });
+      $.ajax({
+        url: '/getlog',
+        method: 'POST',
+        data: JSON.stringify(selectedData),
+        contentType: 'application/json',
+        success: function (childData) {
+          childTableHTML = childData;
+          row.child(childTableHTML).show();
+          tr.addClass('shown');
+        },
+        error: function () {
+          console.log('Error fetching child data');
+        }
+      });
+    }
+  });
+
+  // Close modal
+  document.getElementById("modal-close-btn").addEventListener("click", function () {
+    var inputElement = document.getElementById("message-text");
+    inputElement.value = "";
+    $("#notemodal").modal("hide");
+  });
+
+  // AJAX request when the 'Save' button is clicked
+  document.getElementById("modal-save-btn").addEventListener("click", function () {
+    text = document.getElementById("message-text").value;
+
+    // Perform your AJAX POST request here
+    // Example: Replace the URL with your actual API endpoint
+
+    var table = $('#data').DataTable();
+    var selectedRows = table.rows('.selected').data();
+    var selectedData = [];
+    selectedData.push({
+      servername: selectedRows[0][1],
+      clientname: selectedRows[0][2],
+      note: text.trim()
+    });
+
+    $.ajax({
+      url: '/setnote',
+      method: 'POST',
+      data: JSON.stringify(selectedData),
+      contentType: 'application/json',
+      success: function () {
+        // Handle success
+        var inputElement = document.getElementById("message-text");
+        inputElement.value = "";
+        $("#notemodal").modal("hide");
+      },
+      error: function () {
+        // Handle error
+        alert("Failed to save data. Please try again.");
+      }
+    });
+  });
+</script>
+
+{% endblock %}
